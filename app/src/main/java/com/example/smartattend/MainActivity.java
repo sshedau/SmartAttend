@@ -1,49 +1,76 @@
 package com.example.smartattend;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
-import android.widget.AdapterView;
-import android.widget.Spinner;
-import android.widget.Toast;
-
+import android.widget.*;
 import androidx.appcompat.app.AppCompatActivity;
 
 public class MainActivity extends AppCompatActivity {
 
-    private Spinner spinner;
+    EditText emailEditText, passwordEditText;
+    Spinner userTypeSpinner;
+    Button loginButton;
+    DatabaseHelper db;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main); // Make sure your layout contains spinner with correct ID
+        setContentView(R.layout.activity_main);
 
-        spinner = findViewById(R.id.spinner_user_type);
+        emailEditText = findViewById(R.id.enter_email);
+        passwordEditText = findViewById(R.id.enter_password);
+        userTypeSpinner = findViewById(R.id.spinner_user_type);
+        loginButton = findViewById(R.id.login_button);
+        db = new DatabaseHelper(this);
 
-        String[] userTypes = {"Select User Type", "Student", "Faculty"};
+        // Spinner values
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
+                android.R.layout.simple_spinner_item,
+                new String[]{"Select User Type", "Faculty", "Student"});
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        userTypeSpinner.setAdapter(adapter);
 
-        UserTypeAdapter adapter = new UserTypeAdapter(this, userTypes);
-        spinner.setAdapter(adapter);
+        loginButton.setOnClickListener(view -> {
+            String email = emailEditText.getText().toString().trim();
+            String password = passwordEditText.getText().toString().trim();
+            String userType = userTypeSpinner.getSelectedItem().toString();
 
-        spinner.setSelection(0); // Default selection
-
-        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                if (position != 0) {
-                    String selected = parent.getItemAtPosition(position).toString();
-                    Toast.makeText(MainActivity.this, "Selected: " + selected, Toast.LENGTH_SHORT).show();
-                }
+            if (email.isEmpty() || password.isEmpty()) {
+                Toast.makeText(this, "Please fill all fields", Toast.LENGTH_SHORT).show();
+                return;
             }
 
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {}
+            switch (userType) {
+                case "Faculty":
+                    if (db.validateFaculty(email, password)) {
+                        Toast.makeText(this, "Faculty Login Successful", Toast.LENGTH_SHORT).show();
+                        Intent intent = new Intent(this, FacultyHomeActivity.class);
+                        intent.putExtra("username", email);
+                        startActivity(intent);
+                        finish();
+                    }
+                    else {
+                        Toast.makeText(this, "Invalid Faculty Credentials", Toast.LENGTH_SHORT).show();
+                    }
+                    break;
+
+                case "Student":
+                    if (db.validateStudent(email, password)) {
+                        Toast.makeText(this, "Student Login Successful", Toast.LENGTH_SHORT).show();
+                        Intent intent = new Intent(this, StudentHomeActivity.class);
+                        intent.putExtra("username", email);
+                        startActivity(intent);
+                        finish();
+                    }
+                    else {
+                        Toast.makeText(this, "Invalid Student Credentials", Toast.LENGTH_SHORT).show();
+                    }
+                    break;
+
+                default:
+                    Toast.makeText(this, "Please select a user type", Toast.LENGTH_SHORT).show();
+            }
         });
-
-        String selected = spinner.getSelectedItem().toString();
-        if (selected.equals("Select User Type")) {
-            Toast.makeText(this, "Please select a valid user type", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
     }
 }
