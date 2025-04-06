@@ -5,6 +5,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -73,7 +74,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 ATTENDANCE_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
                 ATTENDANCE_STUDENT_ROLL + " TEXT, " +
                 ATTENDANCE_DATE + " TEXT, " +
-                ATTENDANCE_STATUS + " TEXT)";
+                ATTENDANCE_STATUS + " TEXT, "+
+                "notified INTEGER DEFAULT 0, "+
+                "UNIQUE(" + ATTENDANCE_STUDENT_ROLL + ", " + ATTENDANCE_DATE + "))";
         db.execSQL(createAttendanceTable);
 
         // Insert hardcoded faculty
@@ -125,14 +128,38 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     // Mark attendance
     public boolean markAttendance(String roll, String date, String status) {
         SQLiteDatabase db = this.getWritableDatabase();
-        ContentValues values = new ContentValues();
-        values.put("roll", roll);
-        values.put("date", date);
-        values.put("status", status);
-        long result = db.insert(TABLE_ATTENDANCE, null, values);
-        return result != -1;
+
+        Cursor cursor = db.rawQuery("SELECT * FROM " + TABLE_ATTENDANCE +
+                        " WHERE " + ATTENDANCE_STUDENT_ROLL + " = ? AND " + ATTENDANCE_DATE + " = ?",
+                new String[]{roll, date});
+
+        boolean alreadyMarked = cursor.moveToFirst();
+        cursor.close();
+
+        if (alreadyMarked) {
+            Log.d("ATTENDANCE", "Already marked for roll " + roll + " on " + date);
+            return false;
+        } else {
+            ContentValues values = new ContentValues();
+            values.put(ATTENDANCE_STUDENT_ROLL, roll);
+            values.put(ATTENDANCE_DATE, date);
+            values.put(ATTENDANCE_STATUS, status);
+            values.put("notified", 0);
+
+            long result = db.insert(TABLE_ATTENDANCE, null, values);
+            Log.d("DB_INSERT", "Inserted: " + result);
+            return result != -1;
+        }
     }
 
+    //Update attendance status
+    public void updateAttendanceNotificationStatus(String rollNo, String date) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        String query = "UPDATE " + TABLE_ATTENDANCE +
+                " SET notified = 1 WHERE roll = ? AND date = ?";
+        db.execSQL(query, new Object[]{rollNo, date});
+        db.close();
+    }
 
     // View attendance by student roll number
     public Cursor getAttendanceByRoll(String roll) {
@@ -158,6 +185,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         cursor.close();
         return list;
     }
+    /*
 
     public Cursor getStudentByUsername(String username) {
         SQLiteDatabase db = this.getReadableDatabase();
@@ -180,7 +208,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         cursor.close();
         return list;
     }
-
+*/
     public Cursor getAttendanceForStudent(String roll) {
         SQLiteDatabase db = this.getReadableDatabase();
         return db.rawQuery("SELECT * FROM attendance WHERE roll = ?", new String[]{roll});
