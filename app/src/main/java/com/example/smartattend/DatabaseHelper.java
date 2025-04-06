@@ -1,5 +1,6 @@
 package com.example.smartattend;
 
+import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -122,11 +123,16 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     // Mark attendance
-    public void markAttendance(String roll, String date, String status) {
+    public boolean markAttendance(String roll, String date, String status) {
         SQLiteDatabase db = this.getWritableDatabase();
-        db.execSQL("INSERT INTO " + TABLE_ATTENDANCE + " (roll, date, status) VALUES (?, ?, ?)",
-                new String[]{roll, date, status});
+        ContentValues values = new ContentValues();
+        values.put("roll", roll);
+        values.put("date", date);
+        values.put("status", status);
+        long result = db.insert(TABLE_ATTENDANCE, null, values);
+        return result != -1;
     }
+
 
     // View attendance by student roll number
     public Cursor getAttendanceByRoll(String roll) {
@@ -175,9 +181,31 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return list;
     }
 
-    public Cursor getAttendanceForStudent(String username) {
+    public Cursor getAttendanceForStudent(String roll) {
         SQLiteDatabase db = this.getReadableDatabase();
-        return db.rawQuery("SELECT * FROM attendance WHERE student_username = ?", new String[]{username});
+        return db.rawQuery("SELECT * FROM attendance WHERE roll = ?", new String[]{roll});
     }
+    public Cursor getStudentByEmail(String email) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        return db.rawQuery("SELECT * FROM " + TABLE_STUDENT + " WHERE email = ?", new String[]{email});
+    }
+    public List<StudentModel> getAllStudents() {
+        List<StudentModel> students = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery("SELECT name, roll FROM " + TABLE_STUDENT, null);
+
+
+        if (cursor.moveToFirst()) {
+            do {
+                String name = cursor.getString(cursor.getColumnIndexOrThrow("name"));
+                String roll = cursor.getString(cursor.getColumnIndexOrThrow("roll"));
+                students.add(new StudentModel(name, roll, false)); // default not present
+            } while (cursor.moveToNext());
+        }
+
+        cursor.close();
+        return students;
+    }
+
 
 }

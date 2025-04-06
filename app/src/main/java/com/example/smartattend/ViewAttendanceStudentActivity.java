@@ -2,6 +2,7 @@ package com.example.smartattend;
 
 import android.database.Cursor;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
 import android.widget.Toast;
@@ -26,25 +27,44 @@ public class ViewAttendanceStudentActivity extends AppCompatActivity {
         attendanceListView = findViewById(R.id.attendanceListView);
         db = new DatabaseHelper(this);
 
-        username = getIntent().getStringExtra("username");
 
-        if (username == null || username.isEmpty()) {
-            Toast.makeText(this, "Username not found!", Toast.LENGTH_SHORT).show();
+        attendanceList = new ArrayList<>();
+        // Receiving email from intent
+        String email = getIntent().getStringExtra("email");
+
+        if (email == null || email.isEmpty()) {
+            Toast.makeText(this, "Email not found!", Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
 
+// Fetching RollNumber using Email
+        String roll = null;
+        Cursor studentCursor = db.getStudentByEmail(email);
+        if (studentCursor != null && studentCursor.moveToFirst()) {
+            roll = studentCursor.getString(studentCursor.getColumnIndexOrThrow("roll"));
+            studentCursor.close();
+        }
+
+        if (roll == null) {
+            Toast.makeText(this, "Roll number not found for email!", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+
+// Fetching attendance using roll number
         attendanceList = new ArrayList<>();
-        Cursor cursor = db.getAttendanceForStudent(username);
+        Cursor cursor = db.getAttendanceForStudent(roll);
+
+
 
         if (cursor != null && cursor.moveToFirst()) {
             do {
-                String subject = cursor.getString(cursor.getColumnIndexOrThrow("subject"));
+                Log.d("AttendanceDebug", "Cursor count: " + cursor.getCount());
                 String date = cursor.getString(cursor.getColumnIndexOrThrow("date"));
                 String status = cursor.getString(cursor.getColumnIndexOrThrow("status"));
 
                 HashMap<String, String> record = new HashMap<>();
-                record.put("subject", "Subject: " + subject);
                 record.put("date", "Date: " + date);
                 record.put("status", "Status: " + status);
 
@@ -55,9 +75,10 @@ public class ViewAttendanceStudentActivity extends AppCompatActivity {
                     this,
                     attendanceList,
                     android.R.layout.simple_list_item_2,
-                    new String[]{"subject", "status"},
+                    new String[]{"date", "status"},
                     new int[]{android.R.id.text1, android.R.id.text2}
             );
+
 
             attendanceListView.setAdapter(adapter);
 

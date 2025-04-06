@@ -39,6 +39,8 @@
         <!-- View Attendance -->
         <activity android:name=".ViewAttendanceFacultyActivity"
             android:parentActivityName=".FacultyHomeActivity"/>
+        <activity android:name=".ViewAttendanceStudentActivity"
+            android:parentActivityName=".StudentHomeActivity"/>
 
     </application>
 

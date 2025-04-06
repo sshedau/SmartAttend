@@ -59,7 +59,7 @@ public class MainActivity extends AppCompatActivity {
                     if (db.validateStudent(email, password)) {
                         Toast.makeText(this, "Student Login Successful", Toast.LENGTH_SHORT).show();
                         Intent intent = new Intent(this, StudentHomeActivity.class);
-                        intent.putExtra("username", email);
+                        intent.putExtra("email", email);
                         startActivity(intent);
                         finish();
                     }

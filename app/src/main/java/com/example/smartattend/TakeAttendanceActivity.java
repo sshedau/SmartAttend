@@ -30,6 +30,11 @@ public class TakeAttendanceActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_take_attendance);
+        //
+        DatabaseHelper dbHelper = new DatabaseHelper(this);
+        studentList = dbHelper.getAllStudents(); // ✅ fetch real students
+        studentAdapter = new StudentAdapter(studentList);
+
 
         // Initialize views
         Toolbar toolbar = findViewById(R.id.toolbar_take_attendance);
@@ -42,8 +47,7 @@ public class TakeAttendanceActivity extends AppCompatActivity {
 
         // Initialize RecyclerView
         recyclerViewStudents.setLayoutManager(new LinearLayoutManager(this));
-        studentList = loadDummyStudents(); // Replace with DB data
-        studentAdapter = new StudentAdapter(studentList);
+       // Replace with DB data;
         recyclerViewStudents.setAdapter(studentAdapter);
 
         // Pick Date
@@ -56,11 +60,11 @@ public class TakeAttendanceActivity extends AppCompatActivity {
             }
             else {
                 List<StudentModel> presentStudents = studentAdapter.getPresentStudents();
-                DatabaseHelper dbHelper = new DatabaseHelper(TakeAttendanceActivity.this);
+                DatabaseHelper db_Helper = new DatabaseHelper(TakeAttendanceActivity.this);
 
                 for (StudentModel student : studentList) {
                     String status = student.isPresent() ? "Present" : "Absent";
-                    dbHelper.markAttendance(student.getRoll(), selectedDate, status);
+                    db_Helper.markAttendance(student.getRoll(), selectedDate, status);
                 }
 
                 Toast.makeText(this, "Attendance submitted!", Toast.LENGTH_SHORT).show();
@@ -87,14 +91,8 @@ public class TakeAttendanceActivity extends AppCompatActivity {
         datePickerDialog.show();
     }
 
-    private List<StudentModel> loadDummyStudents() {
-        List<StudentModel> list = new ArrayList<>();
-        list.add(new StudentModel("John Doe", "101", false));
-        list.add(new StudentModel("Alice Smith", "102", false));
-        list.add(new StudentModel("Bob Johnson", "103", false));
-        list.add(new StudentModel("Emma Watson", "104", false));
-        return list;
-    }
+
+
 
 }
 
